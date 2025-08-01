@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add prisma @prisma/client mysql2)",
+      "Bash(npx prisma init)",
+      "Bash(pnpm add -D tsx)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma db push)",
+      "Bash(npm run db:seed)",
+      "Bash(npm run dev)",
+      "Bash(pnpm add cheerio node-html-parser)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npx tsx test-icon-utils.ts)",
+      "Bash(rm test-icon-utils.ts)",
+      "Bash(npx prisma migrate dev --name add-category-sort-order)",
+      "Bash(npx prisma migrate reset --force)",
+      "Bash(npx prisma studio --browser none)",
+      "Bash(mysql -u root -p123456 nav_codeshine -e \"SHOW TABLES;\")",
+      "Bash(curl -X GET http://localhost:3000/api/categories)",
+      "Bash(npx tsx prisma/seed.ts)",
+      "Bash(curl -X GET http://localhost:3000/api/websites)",
+      "Bash(rm /Users/bealqiu/Project/nav-codeshine/seed.sql)",
+      "Bash(pnpm add react-markdown remark-gfm rehype-highlight rehype-raw)",
+      "Bash(pnpm add @tailwindcss/typography)",
+      "Bash(curl -s http://localhost:3001/api/websites)",
+      "Bash(lsof -ti:3001)"
+    ],
+    "deny": []
+  }
+}
