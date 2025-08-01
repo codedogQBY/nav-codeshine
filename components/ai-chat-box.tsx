@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, Bot, User, Sparkles, X, Minimize2, Maximize2 } from "lucide-react"
+import { Send, Bot, User, Sparkles, X, Minimize2, Maximize2, Expand, ChevronDown, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -30,31 +30,121 @@ interface AIChatBoxProps {
   onVisitWebsite: (website: Website) => void
 }
 
+// localStorage key for chat messages
+const CHAT_STORAGE_KEY = 'ai-chat-messages'
+const MAX_CONTEXT_MESSAGES = 10
+
+// Load messages from localStorage
+const loadMessagesFromStorage = (): Message[] => {
+  if (typeof window === 'undefined') return getDefaultMessages()
+  
+  try {
+    const stored = localStorage.getItem(CHAT_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return parsed.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load chat messages from localStorage:', error)
+  }
+  
+  return getDefaultMessages()
+}
+
+// Save messages to localStorage
+const saveMessagesToStorage = (messages: Message[]) => {
+  if (typeof window === 'undefined') return
+  
+  try {
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages))
+  } catch (error) {
+    console.error('Failed to save chat messages to localStorage:', error)
+  }
+}
+
+// Get default welcome message
+const getDefaultMessages = (): Message[] => [
+  {
+    id: "welcome",
+    type: "ai",
+    content:
+      "你好！我是你的智能导航助手 🤖\n\n我可以帮你：\n• 推荐相关网站\n• 分析使用习惯\n• 回答各种问题\n\n试试问我推荐一些设计网站或者其他任何问题吧！",
+    timestamp: new Date(),
+  },
+]
+
+// Manage context messages (keep only last 10 messages for AI context)
+const getContextMessages = (messages: Message[]): Message[] => {
+  // Always keep the welcome message + last 9 messages
+  const welcomeMessage = messages.find(m => m.id === 'welcome')
+  const otherMessages = messages.filter(m => m.id !== 'welcome')
+  
+  const contextMessages = otherMessages.slice(-9) // Last 9 messages
+  
+  return welcomeMessage ? [welcomeMessage, ...contextMessages] : contextMessages.slice(-MAX_CONTEXT_MESSAGES)
+}
+
 export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsite }: AIChatBoxProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      type: "ai",
-      content:
-        "你好！我是你的智能导航助手 🤖\n\n我可以帮你：\n• 推荐相关网站\n• 分析使用习惯\n• 回答各种问题\n\n试试问我推荐一些设计网站或者其他任何问题吧！",
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>(loadMessagesFromStorage)
   const [inputValue, setInputValue] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [isUserScrolling, setIsUserScrolling] = useState(false)
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
   const { toast } = useToast()
 
-  // 自动滚动到底部
+  // Save messages to localStorage whenever messages change
   useEffect(() => {
+    saveMessagesToStorage(messages)
+  }, [messages])
+
+  // 检测用户是否在滚动
+  const handleScroll = () => {
     if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10
+        setShouldAutoScroll(isAtBottom)
+        setShowScrollToBottom(!isAtBottom)
+        
+        if (!isAtBottom) {
+          setIsUserScrolling(true)
+          // 3秒后重置用户滚动状态
+          setTimeout(() => setIsUserScrolling(false), 3000)
+        }
+      }
+    }
+  }
+
+  // 滚动到底部
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+        setShouldAutoScroll(true)
+        setShowScrollToBottom(false)
+        setIsUserScrolling(false)
+      }
+    }
+  }
+
+  // 智能滚动到底部
+  useEffect(() => {
+    if (scrollAreaRef.current && shouldAutoScroll && !isUserScrolling) {
       const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]")
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
     }
-  }, [messages])
+  }, [messages, shouldAutoScroll, isUserScrolling])
 
   // AI回复逻辑 - 支持流式响应和AI推荐
   const generateAIResponse = async (userMessage: string): Promise<{ content: string; recommendations?: Website[] }> => {
@@ -66,7 +156,7 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
         },
         body: JSON.stringify({
           messages: [
-            ...messages.filter(m => m.type !== 'ai' || m.id === 'welcome').map(m => ({
+            ...getContextMessages(messages).map(m => ({
               role: m.type === 'user' ? 'user' : 'assistant',
               content: m.content
             })),
@@ -236,13 +326,30 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
     })
   }
 
+  const handleClearChat = () => {
+    const defaultMessages = getDefaultMessages()
+    setMessages(defaultMessages)
+    toast({
+      title: "聊天记录已清除",
+      description: "对话历史已重置",
+    })
+  }
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className={`fixed z-50 transition-all duration-300 ${
+      isFullscreen 
+        ? "top-4 bottom-4 right-4 left-auto" 
+        : "bottom-20 right-4"
+    }`}>
       <div
         className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl transition-all duration-300 ${
-          isMinimized ? "w-80 h-16" : "w-96 h-[600px]"
+          isMinimized 
+            ? "w-80 h-16" 
+            : isFullscreen 
+              ? "w-96 h-[calc(100vh-32px)]" 
+              : "w-96 h-[600px]"
         }`}
       >
         {/* 头部 */}
@@ -262,11 +369,34 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {!isMinimized && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearChat}
+                  className="h-8 w-8 p-0 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-full"
+                  title="清除聊天记录"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="h-8 w-8 p-0 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-full"
+                  title={isFullscreen ? "退出全屏" : "全屏模式"}
+                >
+                  <Expand className="h-4 w-4" />
+                </Button>
+              </>
+            )}
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsMinimized(!isMinimized)}
               className="h-8 w-8 p-0 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-full"
+              title={isMinimized ? "展开" : "最小化"}
             >
               {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
             </Button>
@@ -275,6 +405,7 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
               size="sm"
               onClick={onClose}
               className="h-8 w-8 p-0 hover:bg-white/50 dark:hover:bg-slate-800/50 rounded-full"
+              title="关闭"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -284,7 +415,14 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
         {!isMinimized && (
           <>
             {/* 消息区域 */}
-            <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 h-[480px] bg-slate-50/30 dark:bg-slate-950/30">
+            <div className="relative">
+              <ScrollArea 
+                 ref={scrollAreaRef} 
+                 className={`flex-1 p-4 bg-slate-50/30 dark:bg-slate-950/30 ${
+                   isFullscreen ? "h-[calc(100vh-200px)]" : "h-[480px]"
+                 }`}
+                 onScrollCapture={handleScroll}
+               >
               <div className="space-y-4">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex gap-3 ${message.type === "user" ? "justify-end" : ""}`}>
@@ -311,14 +449,14 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
                               rehypePlugins={[rehypeRaw]}
                               components={{
                                 // 自定义代码块样式
-                                code: ({node, inline, ...props}) => 
+                                code: ({node, inline, ...props}: any) => 
                                   inline 
                                     ? <code className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />
                                     : <pre className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg text-xs font-mono overflow-x-auto">
                                         <code {...props} />
                                       </pre>,
                                 // 自定义链接样式
-                                a: ({node, ...props}) => 
+                                a: ({node, ...props}: any) => 
                                   <a 
                                     className="text-blue-600 dark:text-blue-400 hover:underline" 
                                     target="_blank" 
@@ -326,7 +464,7 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
                                     {...props} 
                                   />,
                                 // 自定义引用样式
-                                blockquote: ({node, ...props}) => 
+                                blockquote: ({node, ...props}: any) => 
                                   <blockquote 
                                     className="border-l-4 border-blue-300 dark:border-blue-600 pl-4 py-2 bg-blue-50 dark:bg-blue-950/20 rounded-r-lg" 
                                     {...props} 
@@ -397,6 +535,19 @@ export function AIChatBox({ isOpen, onClose, websites, categories, onVisitWebsit
                 ))}
               </div>
             </ScrollArea>
+            
+            {/* 滚动到底部按钮 */}
+            {showScrollToBottom && (
+              <Button
+                onClick={scrollToBottom}
+                className="absolute bottom-4 right-4 h-10 w-10 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-10"
+                size="sm"
+                title="回到最新消息"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
             {/* 输入区域 */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-b-2xl">

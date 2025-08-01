@@ -148,7 +148,6 @@ const lucideIconNames = [
   "Building",
   "Building2",
   "Bus",
-  "BaggageClaim",
   "Cake",
   "Calculator",
   "Calendar",

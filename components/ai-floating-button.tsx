@@ -13,7 +13,7 @@ export function AIFloatingButton({ onClick, hasUnread = false }: AIFloatingButto
   const [isHovered, setIsHovered] = useState(false)
 
   return (
-    <div className="fixed bottom-20 right-8 z-40">
+    <div className="fixed bottom-32 right-8 z-40">
       <Button
         onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}

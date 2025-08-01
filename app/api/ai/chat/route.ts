@@ -71,19 +71,29 @@ ${recommendationPool}
 - 如果用户问学习相关问题，推荐学习资源网站
 - 如果问题不需要推荐网站，就不推荐
 
-📝 推荐格式（非常重要）：
-当需要推荐网站时，请严格按照以下格式在回复中包含特殊标记：
+📝 推荐格式（严格要求）：
+当需要推荐网站时，必须严格按照以下格式在回复中包含特殊标记：
 [RECOMMEND:完整的网站URL]
+
+🔥 格式要求（必须严格遵守）：
+1. 必须使用英文方括号 [ ]
+2. 必须使用英文冒号 :
+3. 必须包含完整的URL（包含https://或http://）
+4. 不能有任何额外的空格或字符
 
 ✅ 正确示例：
 针对你的UI设计问题，我推荐这些工具：
 [RECOMMEND:https://figma.com]
 [RECOMMEND:https://www.sketch.com]
 
-❌ 错误格式：
+❌ 错误格式（绝对不能使用）：
+- [RECOMMENDhttps://figma.com] （缺少冒号）
 - RECOMMEND:https://figma.com （缺少方括号）
 - [RECOMMEND:figma.com] （缺少协议）
 - [推荐:https://figma.com] （使用中文）
+- [RECOMMEND: https://figma.com] （有多余空格）
+
+⚠️ 重要提醒：如果格式不正确，推荐功能将无法工作！
 
 🎯 推荐策略：
 1. 必须从"数据库中所有可推荐的网站"中选择

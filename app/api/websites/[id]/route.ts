@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const website = await prisma.website.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         category: true
       }
@@ -32,14 +33,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { url, title, description, categoryId, tags, favicon, visitCount, lastVisited } = body
 
     const website = await prisma.website.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(url && { url }),
         ...(title && { title }),
@@ -56,7 +58,7 @@ export async function PUT(
     })
 
     return NextResponse.json({ success: true, data: website })
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === 'P2025') {
       return NextResponse.json(
         { success: false, error: 'Website not found' },
@@ -74,15 +76,16 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await prisma.website.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     if (error.code === 'P2025') {
       return NextResponse.json(
         { success: false, error: 'Website not found' },

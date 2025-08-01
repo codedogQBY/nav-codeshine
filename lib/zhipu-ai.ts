@@ -43,7 +43,7 @@ class ZhipuAI {
           model,
           messages,
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 128000,
           stream,
         }),
       })
@@ -84,7 +84,7 @@ class ZhipuAI {
           model,
           messages,
           temperature: 0.7,
-          max_tokens: 2000,
+          max_tokens: 128000,
           stream: true,
         }),
       })
