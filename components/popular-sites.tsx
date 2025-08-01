@@ -8,11 +8,12 @@ import type { Website } from "@/types"
 
 interface PopularSitesProps {
   websites: Website[]
+  categories: { id: string; name: string; icon: string; count: number }[]
   onUpdate: (id: string, updates: Partial<Website>) => void
   onDelete: (id: string) => void
 }
 
-export function PopularSites({ websites, onUpdate, onDelete }: PopularSitesProps) {
+export function PopularSites({ websites, categories, onUpdate, onDelete }: PopularSitesProps) {
   // 按访问次数排序
   const popularWebsites = websites
     .filter((website) => website.visitCount > 0)
@@ -189,22 +190,25 @@ export function PopularSites({ websites, onUpdate, onDelete }: PopularSitesProps
           <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
             <CardContent className="p-6">
               <div className="space-y-4">
-                {topCategories.map(([categoryId, visits], index) => (
-                  <div key={categoryId} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                      <span className="text-sm font-medium text-slate-900 dark:text-white capitalize">
-                        {categoryId}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-slate-900 dark:text-white">{visits}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-500">
-                        {Math.round((visits / totalVisits) * 100)}%
+                {topCategories.map(([categoryId, visits], index) => {
+                  const category = categories.find(c => c.id === categoryId)
+                  return (
+                    <div key={categoryId} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white capitalize">
+                          {category?.name || categoryId}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">{visits}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-500">
+                          {Math.round((visits / totalVisits) * 100)}%
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

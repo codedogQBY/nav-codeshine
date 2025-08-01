@@ -89,7 +89,7 @@ export default function HomePage() {
       case "recent":
         return <RecentVisits websites={websites} onUpdate={updateWebsite} onDelete={deleteWebsite} />
       case "popular":
-        return <PopularSites websites={websites} onUpdate={updateWebsite} onDelete={deleteWebsite} />
+        return <PopularSites websites={websites} categories={categories} onUpdate={updateWebsite} onDelete={deleteWebsite} />
       case "stats":
         return <UsageStats websites={websites} categories={categories} />
       default:
