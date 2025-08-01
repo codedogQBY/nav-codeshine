@@ -1344,41 +1344,47 @@ export function IconPicker({ value, onChange, trigger }: IconPickerProps) {
           </div>
         </div>
 
-        <ScrollArea className="h-80">
+        <div className="h-80 overflow-y-auto">
           <div className="p-4">
-            <div className="grid grid-cols-8 gap-2">
-              {filteredIcons.map((icon) => {
-                const IconComponent = icon.component
-                const isSelected = value === icon.name
+            {filteredIcons.length > 0 ? (
+              <div className="grid grid-cols-8 gap-2 min-h-0">
+                {filteredIcons.slice(0, 200).map((icon) => {
+                  const IconComponent = icon.component
+                  const isSelected = value === icon.name
 
-                return (
-                  <Button
-                    key={icon.name}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleIconSelect(icon.name)}
-                    className={`h-10 w-10 p-0 relative hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                      isSelected ? "bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-500" : ""
-                    }`}
-                    title={icon.name}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                    {isSelected && (
-                      <Check className="absolute -top-1 -right-1 h-3 w-3 text-blue-600 bg-white dark:bg-slate-900 rounded-full" />
-                    )}
-                  </Button>
-                )
-              })}
-            </div>
-
-            {filteredIcons.length === 0 && (
+                  return (
+                    <Button
+                      key={icon.name}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleIconSelect(icon.name)}
+                      className={`h-10 w-10 p-0 relative hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                        isSelected ? "bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-500" : ""
+                      }`}
+                      title={icon.name}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      {isSelected && (
+                        <Check className="absolute -top-1 -right-1 h-3 w-3 text-blue-600 bg-white dark:bg-slate-900 rounded-full" />
+                      )}
+                    </Button>
+                  )
+                })}
+              </div>
+            ) : (
               <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>未找到匹配的图标</p>
               </div>
             )}
+            
+            {filteredIcons.length > 200 && (
+              <div className="text-center py-4 text-slate-500 dark:text-slate-400 text-sm">
+                显示前 200 个图标，请使用搜索功能查找更多图标
+              </div>
+            )}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
           <p className="text-xs text-slate-500 dark:text-slate-400 text-center">共 {allIcons.length} 个图标可选择</p>
